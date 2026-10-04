@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Calculator</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #f2f2f2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .calculator {
+            width: 380px;
+            padding: 30px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        h1 { margin-bottom: 25px; font-size: 32px; }
+        input {
+            width: 90%;
+            padding: 15px;
+            font-size: 20px;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        button {
+            width: 90%;
+            padding: 15px;
+            margin: 8px 0;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        #calculateButton { background: #222; color: white; }
+        #voiceButton { background: #444; color: white; }
+        button:hover { opacity: 0.8; }
+        #result {
+            margin-top: 25px;
+            font-size: 25px;
+            font-weight: bold;
+        }
+        #message { margin-top: 15px; font-size: 16px; }
+    </style>
+</head>
+<body>
+<div class="calculator">
+    <h1>Voice Calculator</h1>
+
+    <input type="text" id="calculation" placeholder="Example: 10 plus 5">
+
+    <button id="calculateButton" onclick="calculate()">Calculate</button>
+    <button id="voiceButton" onclick="startVoice()">🎤 Speak Calculation</button>
+
+    <div id="result">Answer will appear here</div>
+    <div id="message"></div>
+</div>
+
+<script>
+function calculate() {
+    let text = document.getElementById("calculation").value.toLowerCase();
+
+    text = text.replace(/ plus /g, " + ");
+    text = text.replace(/ add /g, " + ");
+    text = text.replace(/ minus /g, " - ");
+    text = text.replace(/ subtract /g, " - ");
+    text = text.replace(/ multiply /g, " * ");
+    text = text.replace(/ times /g, " * ");
+    text = text.replace(/ x /g, " * ");
+    text = text.replace(/ into /g, " * ");
+
+    let match = text.match(/(-?\d+(?:\.\d+)?)\s*([+\-*])\s*(-?\d+(?:\.\d+)?)/);
+
+    if (!match) {
+        document.getElementById("result").innerText = "Operation is not valid";
+        document.getElementById("message").innerText = "Please check your operation.";
+        speak("Your operation is not valid. Please check once.");
+        return;
+    }
+
+    let n1 = parseFloat(match[1]);
+    let operation = match[2];
+    let n2 = parseFloat(match[3]);
+    let answer;
+
+    if (operation === "+") {
+        answer = n1 + n2;
+    } else if (operation === "-") {
+        answer = n1 - n2;
+    } else if (operation === "*") {
+        answer = n1 * n2;
+    } else {
+        document.getElementById("result").innerText = "Operation is not valid";
+        speak("Your operation is not valid.");
+        return;
+    }
+
+    document.getElementById("result").innerText =
+        n1 + " " + operation + " " + n2 + " = " + answer;
+
+    document.getElementById("message").innerText = "Your operation is valid";
+    speak("The answer is " + answer);
+}
+
+function speak(text) {
+    let speech = new SpeechSynthesisUtterance(text);
+    speech.rate = 0.9;
+    speech.volume = 1.0;
+    window.speechSynthesis.speak(speech);
+}
+
+function startVoice() {
+    if (!("webkitSpeechRecognition" in window)) {
+        alert("Speech recognition is not supported in this browser.");
+        return;
+    }
+
+    let recognition = new webkitSpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    document.getElementById("message").innerText = "Listening...";
+    speak("Speak your calculation");
+    recognition.start();
+
+    recognition.onresult = function(event) {
+        let text = event.results[0][0].transcript;
+        document.getElementById("calculation").value = text;
+        document.getElementById("message").innerText = "Recording finished.";
+        calculate();
+    };
+
+    recognition.onerror = function() {
+        document.getElementById("message").innerText = "Could not understand.";
+        speak("Could not understand.");
+    };
+}
+</script>
+</body>
+</html>
